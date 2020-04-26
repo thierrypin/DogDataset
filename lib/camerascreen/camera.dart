@@ -11,7 +11,7 @@ import 'preview_screen.dart';
 
 
 class CameraScreen extends StatefulWidget {
-  final ObservablePet pet;
+  final Pet pet;
   CameraScreen ({ Key key, this.pet }): super(key: key);
 
   @override

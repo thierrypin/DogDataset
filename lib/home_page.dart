@@ -16,19 +16,19 @@ class DogHomePage extends StatefulWidget {
 
 class _DogHomePageState extends State<DogHomePage> {
 
-  PetList _pets = PetList();
+  List<Pet> _pets = List<Pet>();
 
   @override
   void initState() {
     super.initState();
 
-    if (_pets.isEmpty()) {
+    if (_pets.isEmpty) {
       Future<List<Pet>> fpets = loadPets();
       fpets.then((value) {
         print("pets # ${value.length}");
         setState(() {
           print("terminou");
-          _pets.setList(value);
+          _pets = value;
         });
       });
     }
@@ -36,6 +36,7 @@ class _DogHomePageState extends State<DogHomePage> {
 
   Widget _itemBuilder(BuildContext context, int i) {
     Pet pet = _pets[i];
+    print("==============");
     print(pet.name);
     return ListTile(
       title: Padding(
@@ -46,7 +47,7 @@ class _DogHomePageState extends State<DogHomePage> {
       onTap: (){
         var result = Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => ViewPetScreen(pet: ObservablePet(pet))),
+          MaterialPageRoute(builder: (context) => ViewPetScreen(pet: pet)),
         );
         result.then((res) {
           if (res == "delete") {
@@ -60,18 +61,17 @@ class _DogHomePageState extends State<DogHomePage> {
   }
 
   Widget _buildPetsList() {
-    print("Pet Lenght: ${_pets.length()}");
-    if (_pets.isEmpty()) {
+    print("Pet Lenght: ${_pets.length}");
+    if (_pets.isEmpty) {
       return Center(
         child: Text("Você não possui animais cadastrados"),
       );
     } else {
-      print("Tem");
-
       return Observer(
         builder: (_) {
           return ListView.builder(
-            itemCount: _pets.length(),
+            shrinkWrap: true,
+            itemCount: _pets.length,
             itemBuilder: _itemBuilder,
           );
         },
@@ -105,16 +105,14 @@ class _DogHomePageState extends State<DogHomePage> {
           ],
         ),
       ),
-      body:
-      Column(
+      body: Column(
         children: <Widget>[
-          ListTile(title: Text("Animais cadastrados"),),
+          Align(alignment: Alignment.centerLeft, child: ListTile(title: Text("Animais cadastrados", style: Theme.of(context).textTheme.headline5))),
           Expanded(child: _buildPetsList(),),
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        child:
-        Icon(Icons.add),
+        child: Icon(Icons.add),
         tooltip: "Add new pet",
         onPressed: (){
           var result = Navigator.push(

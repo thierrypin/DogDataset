@@ -40,7 +40,7 @@ import '../persistence/pet_access.dart';
 
 class PreviewImageScreen extends StatefulWidget {
   final String imagePath;
-  final ObservablePet pet;
+  final Pet pet;
   PreviewImageScreen ({ Key key, this.imagePath, this.pet }): super(key: key);
 
   @override
@@ -50,7 +50,7 @@ class PreviewImageScreen extends StatefulWidget {
 class _PreviewImageScreenState extends State<PreviewImageScreen> {
 
   Future<String> persistImage() async {
-    String newPath = join(await getPetPath(widget.pet.get()), '${DateTime.now()}.png').replaceAll(" ", "_");
+    String newPath = join(await getPetPath(widget.pet), '${DateTime.now()}.png').replaceAll(" ", "_");
     await File(widget.imagePath).rename(newPath);
 
     return newPath;

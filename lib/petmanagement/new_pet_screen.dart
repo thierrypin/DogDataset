@@ -88,8 +88,8 @@ class _AddPetScreenState extends State<AddPetScreen> {
       });
     }
     if (_formKey.currentState.validate() && widget.pet.petType != PetType.none && widget.pet.sex != Sex.none) {
-      widget.pet.name = _nameController.text;
-      widget.pet.breed = _breedController.text;
+      widget.pet.setName(_nameController.text);
+      widget.pet.setBreed(_breedController.text);
 
       // Save pet
       savePet(widget.pet);
@@ -98,7 +98,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
       if (_newPet) {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => ViewPetScreen(pet: ObservablePet(widget.pet))),
+          MaterialPageRoute(builder: (context) => ViewPetScreen(pet: widget.pet)),
         );
       }
     }
@@ -153,7 +153,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                       value: PetType.dog,
                       groupValue: widget.pet.petType,
                       onChanged: (PetType value) {
-                        setState(() { widget.pet.petType = value; _typeRadioValidationError = false; });
+                        setState(() { widget.pet.setPetType(value); _typeRadioValidationError = false; });
                       },
                     ),
                   ),
@@ -163,7 +163,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                       value: PetType.cat,
                       groupValue: widget.pet.petType,
                       onChanged: (PetType value) {
-                        setState(() { widget.pet.petType = value; _typeRadioValidationError = false; });
+                        setState(() { widget.pet.setPetType(value); _typeRadioValidationError = false; });
                       },
                     ),
                   ),
@@ -186,7 +186,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                       value: Sex.masc,
                       groupValue: widget.pet.sex,
                       onChanged: (Sex value) {
-                        setState(() { widget.pet.sex = value; _sexRadioValidationError = false; });
+                        setState(() { widget.pet.setSex(value); _sexRadioValidationError = false; });
                       },
                     ),
                   ),
@@ -196,7 +196,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
                       value: Sex.fem,
                       groupValue: widget.pet.sex,
                       onChanged: (Sex value) {
-                        setState(() { widget.pet.sex = value; _sexRadioValidationError = false; });
+                        setState(() { widget.pet.setSex(value); _sexRadioValidationError = false; });
                       },
                     ),
                   ),

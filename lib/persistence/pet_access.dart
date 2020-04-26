@@ -50,6 +50,16 @@ String getPetTypeStr(PetType type) {
     return "Alien";
 }
 
+String getSexStr(Sex type) {
+  if (type == Sex.masc)
+    return "Masculino";
+  else if (type == Sex.fem)
+    return "Feminino";
+  else
+    return "??";
+}
+
+
 Future<List<Pet>> loadPets() async {
   Directory directory = await getApplicationDocumentsDirectory();
   List<Directory> petDirs = List<Directory>();

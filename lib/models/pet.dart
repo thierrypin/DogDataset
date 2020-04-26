@@ -1,31 +1,35 @@
-import 'package:json_annotation/json_annotation.dart';
 import 'package:image/image.dart';
 import 'package:mobx/mobx.dart';
+
 
 part 'pet.g.dart';
 
 enum PetType { none, dog, cat }
 enum Sex { none, masc, fem }
 
-@JsonSerializable()
-class Pet {
+class Pet = _PetBase with _$Pet;
+
+abstract class _PetBase with Store {
+  // Ids are not shown in
   int id;
-  @JsonKey(required: true)
-  String name = "";
-  @JsonKey(required: true)
-  PetType petType = PetType.none;
-  @JsonKey(required: true)
-  String breed = "";
-  @JsonKey(required: true)
-  Sex sex = Sex.none;
-  @JsonKey(ignore: true)
   String remoteId;
-  @JsonKey(ignore: true)
+
+  @observable
+  String name = "";
+  @observable
+  String breed = "";
+  @observable
+  PetType petType = PetType.none;
+  @observable
+  Sex sex = Sex.none;
+
+  @observable
   List<String> photos = List<String>();
-  @JsonKey(ignore: true)
+  @observable
   List<Image> thumbnails = List<Image>(); // For displaying purposes
 
-  Pet() {
+
+  _PetBase() {
     id = null;
     name = "";
     petType = PetType.none;
@@ -34,66 +38,88 @@ class Pet {
     remoteId = null;
   }
 
-  factory Pet.fromJson(Map<String, dynamic> json) => _$PetFromJson(json);
-  Map<String, dynamic> toJson() => _$PetToJson(this);
-}
+  _PetBase.fromJson(Map<String, dynamic> json) {
+    id = json['id'];
+    remoteId = json['remoteId'];
+    name = json['name'];
+    breed = json['breed'];
+    petType = getPetTypeFromString(json['petType']);
+    sex = getSexFromString(json['sex']);
+  }
 
+  @action
+  void setName(String value) {
+    name = value;
+  }
 
-class ObservablePet = ObservablePetBase with _$ObservablePet;
+  @action
+  void setBreed(String value) {
+    breed = value;
+  }
 
-abstract class ObservablePetBase with Store {
-  @observable
-  Pet _pet;
+  @action
+  void setPetType(PetType value) {
+    petType = value;
+  }
 
-  Pet get() {return _pet;}
-
-  ObservablePetBase(Pet p) {
-    this._pet = p;
+  @action
+  void setSex(Sex value) {
+    sex = value;
   }
 
   @action
   void addPhoto(String path) {
-    _pet.photos.add(path);
+    photos.add(path);
   }
 
   @action
   void addThumbnail(Image thumbnail) {
-    _pet.thumbnails.add(thumbnail);
+    thumbnails.add(thumbnail);
   }
 
-  // Actions
-//  @action
-//  void setList(List<Pet> value) { _list = value; }
-//
-//  @action
-//  void removeAt(int i) { _list.removeAt(i); }
-//
-//  @action
-//  void add(Pet value) { _list.add(value); }
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      'id': id,
+      'remoteId': remoteId,
+      'name': name,
+      'petType': getStringFromPetType(petType),
+      'sex': getStringFromSex(sex),
+    };
+
+  }
 }
 
-class PetList = PetListBase with _$PetList;
 
-abstract class PetListBase with Store {
-  @observable
-  List<Pet> _list = List<Pet>();
-
-  // Access operators
-  operator [](int i) => _list[i]; // get
-//  operator []=(int i, Pet value) => _list[i] = value; // set is not used here
-
-  // State retrievers
-  bool isEmpty() => _list.isEmpty;
-  int length() => _list.length;
-
-  // Actions
-  @action
-  void setList(List<Pet> value) { _list = value; }
-
-  @action
-  void removeAt(int i) { _list.removeAt(i); }
-
-  @action
-  void add(Pet value) { _list.add(value); }
+// For json serialization
+// PetType
+PetType getPetTypeFromString(String petTypeAsString) {
+  for (PetType element in PetType.values) {
+    if (element.toString().split('.')[1] == petTypeAsString) {
+      return element;
+    }
+  }
+  return null;
 }
+
+String getStringFromPetType(PetType type) {
+  return type.toString().split('.')[1];
+}
+
+// Sex
+Sex getSexFromString(String sexAsString) {
+  for (Sex element in Sex.values) {
+    if (element.toString().split('.')[1] == sexAsString) {
+      return element;
+    }
+  }
+  return null;
+}
+
+String getStringFromSex(Sex sex) {
+  return sex.toString().split('.')[1];
+}
+
+
+
+
 

@@ -6,13 +6,13 @@ import 'package:mobx/mobx.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image/image.dart' as pimg;
 
-
 import '../models/pet.dart';
 import '../persistence/pet_access.dart';
 import '../camerascreen/camera.dart';
+import 'new_pet_screen.dart';
 
 class ViewPetScreen extends StatefulWidget {
-  final ObservablePet pet;
+  final Pet pet;
   ViewPetScreen ({ Key key, this.pet }): super(key: key);
 
   State<StatefulWidget> createState() => _ViewPetScreenState();
@@ -20,23 +20,23 @@ class ViewPetScreen extends StatefulWidget {
 
 class _ViewPetScreenState extends State<ViewPetScreen> {
   Directory _directory;
-  bool _editingType = false;
 
   @override
   void initState() {
     super.initState();
     getApplicationDocumentsDirectory().then((Directory value) {
       setState(() {
-        _directory = Directory(value.path + '/' + widget.pet.get().id.toString().padLeft(6, '0'));
+        _directory = Directory(value.path + '/' + widget.pet.id.toString().padLeft(6, '0'));
         print(_directory);
       });
     });
     populateThumbnails();
   }
 
+
   void populateThumbnails() {
 //    widget.pet.thumbnails = List<pimg.Image>();
-    for (String img in widget.pet.get().photos) {
+    for (String img in widget.pet.photos) {
       print(img);
       pimg.Image image = pimg.decodeImage(File(img).readAsBytesSync());
 
@@ -46,13 +46,14 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
     }
   }
 
+  // Build thumbnail tile
   Widget buildTile(BuildContext context, int i) {
     return GridTile(
       child: Align(
         child: Container(
           decoration: BoxDecoration(
             image: DecorationImage(
-              image: MemoryImage(pimg.encodePng(widget.pet.get().thumbnails[i])),
+              image: MemoryImage(pimg.encodePng(widget.pet.thumbnails[i])),
               fit: BoxFit.cover,
             ),
           ),
@@ -63,10 +64,43 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
     );
   }
 
+  // Displays or edits
   Widget makePetType() {
-    if (_editingType) {
+    return Expanded(child:
+        Observer(
+          builder: (_) {
+            return ListTile(
+                title: Text(getPetTypeStr(widget.pet.petType))
+            );
+          },
+        )
 
-    }
+    );
+  }
+
+  Widget makePetSex() {
+      return Expanded(
+        child:
+        Observer(
+          builder: (_) {
+            return ListTile(
+              title: Text(getSexStr(widget.pet.sex)),
+            );
+          }
+        )
+      );
+  }
+
+  Widget makePetBreed() {
+    return Expanded(
+      child: Observer(
+        builder: (_) {
+          return ListTile(
+              title: (widget.pet.breed == "" || widget.pet.breed == null) ? Text("Vira-lata") : Text(widget.pet.breed)
+          );
+        },
+      )
+    );
   }
 
   Widget makeInfoRow() {
@@ -75,11 +109,17 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Expanded(child: ListTile(title: Text(getPetTypeStr(widget.pet.get().petType)))),
-              Expanded(child: ListTile(title: (widget.pet.get().breed == "" || widget.pet.get().breed == null) ? Text("Vira-lata") : Text(widget.pet.get().breed))),
+              makePetType(),
+              makePetBreed(),
             ],
           ),
-          ListTile(title: (widget.pet.get().sex == Sex.masc) ? Text("Macho") : Text("Fêmea")),
+          Row(
+            children: <Widget>[
+              makePetSex(),
+              Expanded(child: Text(""),),
+            ],
+          )
+
         ],
       ),
     );
@@ -87,25 +127,26 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
 
 
   Widget makeGallery() {
-    print("# photos: ${widget.pet.get().thumbnails.length}");
-    if (widget.pet.get().photos.isNotEmpty) {
+    print("# photos: ${widget.pet.thumbnails.length}");
+    if (widget.pet.photos.isNotEmpty) {
       return Expanded(
-        child: Container(
-          decoration: new BoxDecoration(
-            border: Border.all(color: Colors.black26, style: BorderStyle.solid, width: 3),
-            boxShadow: [BoxShadow(color: Colors.black)],
-            color: Colors.white70,
-          ),
-          child: Observer(
-            builder: (_) {
-              return GridView.builder(
-                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 150, crossAxisSpacing: 8, mainAxisSpacing: 8),
-                itemBuilder: buildTile,
-                itemCount: widget.pet.get().thumbnails.length,
-              );
-            }
-          ),
-        ),
+        child: Observer(
+          builder: (_){
+            return Container(
+                decoration: new BoxDecoration(
+                  border: Border.all(color: Colors.black26, style: BorderStyle.solid, width: 3),
+                  boxShadow: [BoxShadow(color: Colors.black)],
+                  color: Colors.white70,
+                ),
+                child: GridView.builder(
+                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 150, crossAxisSpacing: 8, mainAxisSpacing: 8),
+                  itemBuilder: buildTile,
+                  itemCount: widget.pet.thumbnails.length,
+                )
+            );
+
+          },
+        )
       );
     } else {
       return Center(child: Text("Este pet não possui fotos."),);
@@ -113,7 +154,8 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
   }
 
   void _deletePet() {
-    deletePet(widget.pet.get());
+    // TODO
+    deletePet(widget.pet);
   }
 
   Future<bool> _showDialog() async {
@@ -122,7 +164,7 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
       builder: (BuildContext context) {
         // return object of type Dialog
         return AlertDialog(
-          title: new Text("Deletar ${widget.pet.get().name}?"),
+          title: new Text("Deletar ${widget.pet.name}?"),
           content: new Text("Esta ação não poderá ser desfeita"),
           actions: <Widget>[
             // usually buttons at the bottom of the dialog
@@ -161,13 +203,10 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
           RaisedButton(
             child: Row(children: <Widget>[Icon(Icons.edit), Text("Editar")],),
             onPressed: () {
-//              var res = Navigator.push(
-//                context,
-//                MaterialPageRoute(builder: (context) => AddPetScreen(pet: widget.pet)),
-//              );
-//              res.then((val) {
-//                print(widget.pet.breed);
-//              });
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => AddPetScreen(pet: widget.pet)),
+              );
             },
           ),
         ],
@@ -187,11 +226,14 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
 
   @override
   Widget build(BuildContext context) {
-    String emoji = getPetEmoji(widget.pet.get().petType);
-
     return Scaffold(
       appBar: AppBar(
-        title: Text(emoji + " " + widget.pet.get().name),
+        title: Observer(
+          builder: (_) {
+            String emoji = getPetEmoji(widget.pet.petType);
+            return Text(emoji + " " + widget.pet.name);
+          },
+        ),
 
       ),
       body: makeBody(),
@@ -204,17 +246,17 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
             context,
             MaterialPageRoute(builder: (context) => CameraScreen(pet: widget.pet)),
           );
-          response.then((value) {
-            if (value is String) {
-              pimg.Image image = pimg.decodeImage(File(value).readAsBytesSync());
-              pimg.Image thumbnail = pimg.copyResize(image, width: 200);
-
-              setState(() {
-                widget.pet.get().photos.add(value);
-                widget.pet.get().thumbnails.add(thumbnail);
-              });
-            }
-          });
+//          response.then((value) {
+//            if (value is String) {
+//              pimg.Image image = pimg.decodeImage(File(value).readAsBytesSync());
+//              pimg.Image thumbnail = pimg.copyResize(image, width: 200);
+//
+////              setState(() {
+////              widget.pet.photos.add(value);
+////              widget.pet.thumbnails.add(thumbnail);
+////              });
+//            }
+//          });
         },
       ),
 
