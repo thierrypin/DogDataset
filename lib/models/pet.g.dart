@@ -97,14 +97,14 @@ mixin _$Pet on _PetBase, Store {
   final _$thumbnailsAtom = Atom(name: '_PetBase.thumbnails');
 
   @override
-  List<Image> get thumbnails {
+  List<List<int>> get thumbnails {
     _$thumbnailsAtom.context.enforceReadPolicy(_$thumbnailsAtom);
     _$thumbnailsAtom.reportObserved();
     return super.thumbnails;
   }
 
   @override
-  set thumbnails(List<Image> value) {
+  set thumbnails(List<List<int>> value) {
     _$thumbnailsAtom.context.conditionallyRunInAction(() {
       super.thumbnails = value;
       _$thumbnailsAtom.reportChanged();
@@ -164,10 +164,30 @@ mixin _$Pet on _PetBase, Store {
   }
 
   @override
-  void addThumbnail(Image thumbnail) {
+  void removePhoto(int i) {
+    final _$actionInfo = _$_PetBaseActionController.startAction();
+    try {
+      return super.removePhoto(i);
+    } finally {
+      _$_PetBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void addThumbnail(List<int> thumbnail) {
     final _$actionInfo = _$_PetBaseActionController.startAction();
     try {
       return super.addThumbnail(thumbnail);
+    } finally {
+      _$_PetBaseActionController.endAction(_$actionInfo);
+    }
+  }
+
+  @override
+  void removeThumbnail(int i) {
+    final _$actionInfo = _$_PetBaseActionController.startAction();
+    try {
+      return super.removeThumbnail(i);
     } finally {
       _$_PetBaseActionController.endAction(_$actionInfo);
     }

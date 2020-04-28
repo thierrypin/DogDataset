@@ -1,6 +1,4 @@
-import 'package:image/image.dart';
 import 'package:mobx/mobx.dart';
-
 
 part 'pet.g.dart';
 
@@ -26,7 +24,7 @@ abstract class _PetBase with Store {
   @observable
   List<String> photos = List<String>();
   @observable
-  List<Image> thumbnails = List<Image>(); // For displaying purposes
+  List<List<int>> thumbnails = List<List<int>>(); // For displaying purposes
 
 
   _PetBase() {
@@ -73,8 +71,19 @@ abstract class _PetBase with Store {
   }
 
   @action
-  void addThumbnail(Image thumbnail) {
+  void removePhoto(int i) {
+    photos.removeAt(i);
+  }
+
+
+  @action
+  void addThumbnail(List<int> thumbnail) {
     thumbnails.add(thumbnail);
+  }
+
+  @action
+  void removeThumbnail(int i) {
+    thumbnails.removeAt(i);
   }
 
   Map<String, dynamic> toJson() {

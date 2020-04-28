@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:mobx/mobx.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 
 import 'dart:async';
 
 import 'models/pet.dart';
 import 'persistence/pet_access.dart';
-import 'petmanagement/new_pet_screen.dart';
+import 'petmanagement/add_pet_screen.dart';
 import 'petmanagement/view_pet_screen.dart';
 
 
@@ -17,6 +18,7 @@ class DogHomePage extends StatefulWidget {
 class _DogHomePageState extends State<DogHomePage> {
 
   List<Pet> _pets = List<Pet>();
+  ObservableList<Pet> _observablePets = ObservableList<Pet>();
 
   @override
   void initState() {
@@ -30,12 +32,13 @@ class _DogHomePageState extends State<DogHomePage> {
           print("terminou");
           _pets = value;
         });
+        _observablePets = ObservableList<Pet>.of(_pets);
       });
     }
   }
 
   Widget _itemBuilder(BuildContext context, int i) {
-    Pet pet = _pets[i];
+    Pet pet = _observablePets[i];
     print("==============");
     print(pet.name);
     return ListTile(
@@ -47,22 +50,15 @@ class _DogHomePageState extends State<DogHomePage> {
       onTap: (){
         var result = Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => ViewPetScreen(pet: pet)),
+          MaterialPageRoute(builder: (context) => ViewPetScreen(pet: pet, pets: _observablePets)),
         );
-        result.then((res) {
-          if (res == "delete") {
-            setState(() {
-              _pets.removeAt(i);
-            });
-          }
-        });
       },
     );
   }
 
   Widget _buildPetsList() {
-    print("Pet Lenght: ${_pets.length}");
-    if (_pets.isEmpty) {
+    print("Pet Lenght: ${_observablePets.length}");
+    if (_observablePets.isEmpty) {
       return Center(
         child: Text("Você não possui animais cadastrados"),
       );
@@ -71,7 +67,7 @@ class _DogHomePageState extends State<DogHomePage> {
         builder: (_) {
           return ListView.builder(
             shrinkWrap: true,
-            itemCount: _pets.length,
+            itemCount: _observablePets.length,
             itemBuilder: _itemBuilder,
           );
         },
@@ -80,54 +76,81 @@ class _DogHomePageState extends State<DogHomePage> {
     }
   }
 
+  Widget addPetButton() {
+    return IconButton(
+      icon: Icon(Icons.add),
+      tooltip: "Novo pet",
+      onPressed: (){
+        var result = Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => AddPetScreen(pet: Pet(), pets: _observablePets)),
+        );
+        result.then((value){
+          if(value is Pet) {
+            setState((){
+              _pets.add(value);
+            });
+          }
+        });
+      },
+    );
+  }
+
+  Widget makeDrawer() {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: <Widget>[
+          DrawerHeader(
+            child: Center(child: Text('Opções'),),
+            decoration: BoxDecoration(
+              color: Colors.blue,
+            ),
+          ),
+          ListTile(
+            title: Text("Instruções"),
+            onTap: () {
+              print("tapou instruções");
+            },
+          ),
+          ListTile(
+            title: Text("Sobre"),
+            onTap: () {
+              print("tapou sobre");
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget uploadButton() {
+    return FloatingActionButton(
+        child: Icon(Icons.cloud_upload),
+        tooltip: "Enviar fotos",
+        onPressed: () {
+          //
+        }
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text("Unesp - Dataset de PET"),
+        actions: <Widget>[
+          addPetButton(),
+        ],
       ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: <Widget>[
-            DrawerHeader(
-              child: Center(child: Text('Opções'),),
-              decoration: BoxDecoration(
-                color: Colors.blue,
-              ),
-            ),
-            ListTile(
-              title: Text("Sobre"),
-              onTap: () {
-                print("tapou sobre");
-              },
-            )
-          ],
-        ),
-      ),
+      drawer: makeDrawer(),
       body: Column(
         children: <Widget>[
           Align(alignment: Alignment.centerLeft, child: ListTile(title: Text("Animais cadastrados", style: Theme.of(context).textTheme.headline5))),
           Expanded(child: _buildPetsList(),),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.add),
-        tooltip: "Add new pet",
-        onPressed: (){
-          var result = Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => AddPetScreen(pet: Pet())),
-          );
-          result.then((value){
-            if(value is Pet) {
-              setState((){
-                _pets.add(value);
-              });
-            }
-          });
-        },
-      ),
+      floatingActionButton: uploadButton(),
     );
   }
 

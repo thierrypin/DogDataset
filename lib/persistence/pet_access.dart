@@ -2,9 +2,11 @@
 import 'dart:io';
 import 'dart:convert';
 
+import 'package:image/image.dart' as pimg;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart';
+import 'package:tuple/tuple.dart';
 
 import '../models/pet.dart';
 
@@ -52,9 +54,9 @@ String getPetTypeStr(PetType type) {
 
 String getSexStr(Sex type) {
   if (type == Sex.masc)
-    return "Masculino";
+    return "Macho";
   else if (type == Sex.fem)
-    return "Feminino";
+    return "Fêmea";
   else
     return "??";
 }
@@ -94,8 +96,74 @@ Future<List<Pet>> loadPets() async {
   return pets;
 }
 
+void populateThumbnails(Pet pet) {
+  if (pet.photos.length > pet.thumbnails.length) {
+    for (int i = pet.thumbnails.length; i < pet.photos.length; i++) {
+      String img = pet.photos[i];
+      print(img);
+      pimg.Image image = pimg.decodeImage(File(img).readAsBytesSync());
+      print("${image.width}x${image.height}");
+
+      // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
+      pimg.Image thumbnail = pimg.copyResize(image, width: 150, height: 150);
+      pet.addThumbnail(pimg.encodePng(thumbnail));
+    }
+  }
+}
+
+void addPhoto(Pet pet, dynamic f) {
+  File file;
+  if (f is String)
+    file = File(f);
+  else if (f is File)
+    file = f;
+  else
+    throw("addPhoto arguments can only be String or File");
+
+  Future<String> res = persistImage(pet, file);
+
+  res.then((value) {
+    pimg.Image image = pimg.decodeImage(file.readAsBytesSync());
+    pimg.Image thumbnail = pimg.copyResize(image, width: 150);
+
+    pet.addPhoto(value);
+    pet.addThumbnail(pimg.encodePng(thumbnail));
+  });
+}
+
+void deletePhoto(Pet pet, int idx) {
+  File file = File(pet.photos[idx]);
+  file.delete(recursive: false);
+
+  pet.removePhoto(idx);
+  pet.removeThumbnail(idx);
+}
+
+// Returns a Tuple3 with: encoded image, width, height
+Tuple3<List<int>, num, num> getPhoto(dynamic f) {
+  File file;
+  if (f is String)
+    file = File(f);
+  else if (f is File)
+    file = f;
+  else
+    throw("addPhoto arguments can only be String or File");
+
+  pimg.Image image = pimg.decodeImage(file.readAsBytesSync());
+
+  return Tuple3<List<int>, num, num>(pimg.encodePng(image), image.width, image.height);
+}
+
+Future<String> persistImage(Pet pet, File file) async {
+  String newPath = join(await getPetPath(pet), '${DateTime.now()}.png').replaceAll(" ", "_");
+  await file.copy(newPath);
+
+  return newPath;
+}
+
 Future<String> getPetPath(Pet pet) async {
   Directory directory = await getApplicationDocumentsDirectory();
 
   return join(directory.path, pet.id.toString().padLeft(6, '0'));
 }
+
