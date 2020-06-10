@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mobx/mobx.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import 'dart:io';
 
 import '../models/pet.dart';
-import '../persistence/pet_access.dart';
+import '../persistence/pet_persistence.dart' as PA;
 import 'view_pet_screen.dart';
 
 class AddPetScreen extends StatefulWidget {
@@ -36,6 +35,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
   void initState() {
     super.initState();
 
+    // Get directory path and print its contents
     getApplicationDocumentsDirectory().then((Directory value) {
       setState(() {
         _directory = value.path;
@@ -46,21 +46,10 @@ class _AddPetScreenState extends State<AddPetScreen> {
       });
     });
 
-    if (widget.pet.id == null) {
-      print("Id nulo");
+    if (widget.pet.localId == null) {
       _newPet = true;
-
-      SharedPreferences.getInstance().then((SharedPreferences _prefs) {
-        int id = _prefs.getInt('id_counter');
-        if (id == null) {
-          _prefs.setInt("id_counter", 0);
-          id = 0;
-        }
-
-        widget.pet.id = id;
-      });
     } else {
-      print("Id ${widget.pet.id}");
+      print("Id ${widget.pet.localId}");
       print("nome ${widget.pet.name}");
       _newPet = false;
 
@@ -97,7 +86,7 @@ class _AddPetScreenState extends State<AddPetScreen> {
       widget.pet.setBreed(_breedController.text);
 
       // Save pet
-      savePet(widget.pet);
+      PA.savePet(widget.pet);
       widget.pets.add(widget.pet);
 
       Navigator.pop(context, widget.pet);

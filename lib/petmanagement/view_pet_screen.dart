@@ -1,13 +1,14 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_mobx/flutter_mobx.dart';
 import 'package:mobx/mobx.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../models/pet.dart';
-import '../persistence/pet_access.dart';
+import '../persistence/pet_persistence.dart' as persist;
 import 'add_pet_screen.dart';
 
 class ViewPetScreen extends StatefulWidget {
@@ -30,7 +31,6 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
         print(_directory);
       });
     });
-    populateThumbnails(widget.pet);
   }
 
   // Displays or edits
@@ -39,7 +39,7 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
         Observer(
           builder: (_) {
             return ListTile(
-                title: Text(getPetTypeStr(widget.pet.petType))
+                title: Text(persist.getPetTypeStr(widget.pet.petType))
             );
           },
         )
@@ -53,7 +53,7 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
         Observer(
           builder: (_) {
             return ListTile(
-              title: Text(getSexStr(widget.pet.sex)),
+              title: Text(persist.getSexStr(widget.pet.sex)),
             );
           }
         )
@@ -99,12 +99,12 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
     return GridTile(
       child: GestureDetector(
         onTap: () async {
-          await showDialog(context: context, builder: (_) => ImageDialog(widget.pet.photos[i]));
+          await showDialog(context: context, builder: (_) => ImageDialog(widget.pet.photos[i].path));
         },
         child: Container(
           decoration: BoxDecoration(
-            image: DecorationImage(
-              image: MemoryImage(widget.pet.thumbnails[i]),
+            image: DecorationImage( //widget.pet.photos[i].getThumbnail()
+              image: FileImage(File(widget.pet.photos[i].getThumbnail())),
               fit: BoxFit.cover,
             ),
           ),
@@ -112,7 +112,7 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
             alignment: Alignment.topRight,
             child: IconButton(
               icon: Icon(Icons.cancel, size: 20, color: Colors.red,),
-              onPressed: () => deletePhoto(widget.pet, i),
+              onPressed: () => persist.deletePhoto(widget.pet, i),
             ),
           ),
         ),
@@ -122,7 +122,7 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
   }
 
   Widget makeGallery() {
-    print("# photos: ${widget.pet.thumbnails.length}");
+    print("# photos: ${widget.pet.photos.length}");
     if (widget.pet.photos.isNotEmpty) {
       return Expanded(
         child: Observer(
@@ -136,7 +136,7 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
                 child: GridView.builder(
                   gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(maxCrossAxisExtent: 150, crossAxisSpacing: 8, mainAxisSpacing: 8),
                   itemBuilder: buildTile,
-                  itemCount: widget.pet.thumbnails.length,
+                  itemCount: widget.pet.photos.length,
                 )
             );
           },
@@ -149,7 +149,7 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
 
   void _deletePet() {
     widget.pets.remove(widget.pet);
-    deletePet(widget.pet);
+    persist.deletePet(widget.pet);
   }
 
   Future<bool> _showDeleteDialog() async {
@@ -187,7 +187,7 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
     f.then((File file) {
       if (file != null) {
         setState(() {
-          addPhoto(widget.pet, file);
+          persist.addPhoto(widget.pet, file);
         });
       }
     });
@@ -255,7 +255,7 @@ class _ViewPetScreenState extends State<ViewPetScreen> {
       appBar: AppBar(
         title: Observer(
           builder: (_) {
-            String emoji = getPetEmoji(widget.pet.petType);
+            String emoji = persist.getPetEmoji(widget.pet.petType);
             return Text(emoji + " " + widget.pet.name);
           },
         ),
@@ -277,7 +277,7 @@ class ImageDialog extends StatefulWidget {
 class _ImageDialogState extends State<ImageDialog> {
   @override
   Widget build(BuildContext context) {
-    var tuple = getPhoto(widget.path);
+    var tuple = persist.getPhoto(widget.path);
     num w = tuple.item2;
     num h = tuple.item3;
     num aspect = (w > h) ? w / h : h / w;

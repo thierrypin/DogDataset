@@ -77,38 +77,38 @@ mixin _$Pet on _PetBase, Store {
     }, _$sexAtom, name: '${_$sexAtom.name}_set');
   }
 
+  final _$editedAtom = Atom(name: '_PetBase.edited');
+
+  @override
+  bool get edited {
+    _$editedAtom.context.enforceReadPolicy(_$editedAtom);
+    _$editedAtom.reportObserved();
+    return super.edited;
+  }
+
+  @override
+  set edited(bool value) {
+    _$editedAtom.context.conditionallyRunInAction(() {
+      super.edited = value;
+      _$editedAtom.reportChanged();
+    }, _$editedAtom, name: '${_$editedAtom.name}_set');
+  }
+
   final _$photosAtom = Atom(name: '_PetBase.photos');
 
   @override
-  List<String> get photos {
+  List<Photo> get photos {
     _$photosAtom.context.enforceReadPolicy(_$photosAtom);
     _$photosAtom.reportObserved();
     return super.photos;
   }
 
   @override
-  set photos(List<String> value) {
+  set photos(List<Photo> value) {
     _$photosAtom.context.conditionallyRunInAction(() {
       super.photos = value;
       _$photosAtom.reportChanged();
     }, _$photosAtom, name: '${_$photosAtom.name}_set');
-  }
-
-  final _$thumbnailsAtom = Atom(name: '_PetBase.thumbnails');
-
-  @override
-  List<List<int>> get thumbnails {
-    _$thumbnailsAtom.context.enforceReadPolicy(_$thumbnailsAtom);
-    _$thumbnailsAtom.reportObserved();
-    return super.thumbnails;
-  }
-
-  @override
-  set thumbnails(List<List<int>> value) {
-    _$thumbnailsAtom.context.conditionallyRunInAction(() {
-      super.thumbnails = value;
-      _$thumbnailsAtom.reportChanged();
-    }, _$thumbnailsAtom, name: '${_$thumbnailsAtom.name}_set');
   }
 
   final _$_PetBaseActionController = ActionController(name: '_PetBase');
@@ -154,10 +154,10 @@ mixin _$Pet on _PetBase, Store {
   }
 
   @override
-  void addPhoto(String path) {
+  void addPhoto(Photo photo) {
     final _$actionInfo = _$_PetBaseActionController.startAction();
     try {
-      return super.addPhoto(path);
+      return super.addPhoto(photo);
     } finally {
       _$_PetBaseActionController.endAction(_$actionInfo);
     }
@@ -174,29 +174,9 @@ mixin _$Pet on _PetBase, Store {
   }
 
   @override
-  void addThumbnail(List<int> thumbnail) {
-    final _$actionInfo = _$_PetBaseActionController.startAction();
-    try {
-      return super.addThumbnail(thumbnail);
-    } finally {
-      _$_PetBaseActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
-  void removeThumbnail(int i) {
-    final _$actionInfo = _$_PetBaseActionController.startAction();
-    try {
-      return super.removeThumbnail(i);
-    } finally {
-      _$_PetBaseActionController.endAction(_$actionInfo);
-    }
-  }
-
-  @override
   String toString() {
     final string =
-        'name: ${name.toString()},breed: ${breed.toString()},petType: ${petType.toString()},sex: ${sex.toString()},photos: ${photos.toString()},thumbnails: ${thumbnails.toString()}';
+        'name: ${name.toString()},breed: ${breed.toString()},petType: ${petType.toString()},sex: ${sex.toString()},edited: ${edited.toString()},photos: ${photos.toString()}';
     return '{$string}';
   }
 }

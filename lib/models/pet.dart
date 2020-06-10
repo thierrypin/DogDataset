@@ -5,12 +5,39 @@ part 'pet.g.dart';
 enum PetType { none, dog, cat }
 enum Sex { none, masc, fem }
 
+
+class Photo {
+  static final String suffix = ".thumbnail.png";
+  bool uploaded = false; // If true, object must be
+  String path;
+
+  Photo({this.uploaded=false, this.path});
+
+  String getThumbnail() {
+    return path + suffix;
+  }
+
+  Map<String, dynamic> toJson() {
+    Map<String, dynamic> out = {
+      "path": path,
+      "uploaded": uploaded,
+    };
+
+    return out;
+  }
+
+  Photo.fromJson(Map<String, dynamic> json) {
+    uploaded = json['edited'];
+    path = json['path'];
+  }
+}
+
 class Pet = _PetBase with _$Pet;
 
 abstract class _PetBase with Store {
   // Ids are not shown in
   int id;
-  String remoteId;
+  int localId;
 
   @observable
   String name = "";
@@ -20,11 +47,11 @@ abstract class _PetBase with Store {
   PetType petType = PetType.none;
   @observable
   Sex sex = Sex.none;
+  @observable
+  bool edited = false;
 
   @observable
-  List<String> photos = List<String>();
-  @observable
-  List<List<int>> thumbnails = List<List<int>>(); // For displaying purposes
+  List<Photo> photos = List<Photo>();
 
 
   _PetBase() {
@@ -33,16 +60,50 @@ abstract class _PetBase with Store {
     petType = PetType.none;
     breed = "";
     sex = Sex.none;
-    remoteId = null;
+    localId = null;
+    edited = false;
+    photos = List<Photo>();
   }
 
   _PetBase.fromJson(Map<String, dynamic> json) {
     id = json['id'];
-    remoteId = json['remoteId'];
     name = json['name'];
     breed = json['breed'];
     petType = getPetTypeFromString(json['petType']);
     sex = getSexFromString(json['sex']);
+
+    // Set photos
+    photos = json['photos'].map((Map<String, dynamic> e) {
+      return Photo.fromJson(e);
+    });
+
+    if (json.containsKey('localId'))
+      localId = json['localId'];
+
+    if (json.containsKey('edited'))
+      edited = json['edited'];
+    else
+      edited = false;
+  }
+
+  Map<String, dynamic> toJson({bool local=true}) {
+    var photosJson = photos.map((Photo p) => p.toJson()).toList();
+
+    Map<String, dynamic> out = {
+      'id': id,
+      'name': name,
+      'breed': breed,
+      'petType': getStringFromPetType(petType),
+      'sex': getStringFromSex(sex),
+      'photos': photosJson,
+    };
+
+    if (local) {
+      out['localId'] = localId;
+      out['edited'] = edited;
+    }
+
+    return out;
   }
 
   @action
@@ -66,35 +127,13 @@ abstract class _PetBase with Store {
   }
 
   @action
-  void addPhoto(String path) {
-    photos.add(path);
+  void addPhoto(Photo photo) {
+    photos.add(photo);
   }
 
   @action
   void removePhoto(int i) {
     photos.removeAt(i);
-  }
-
-
-  @action
-  void addThumbnail(List<int> thumbnail) {
-    thumbnails.add(thumbnail);
-  }
-
-  @action
-  void removeThumbnail(int i) {
-    thumbnails.removeAt(i);
-  }
-
-  Map<String, dynamic> toJson() {
-    return <String, dynamic>{
-      'id': id,
-      'remoteId': remoteId,
-      'name': name,
-      'petType': getStringFromPetType(petType),
-      'sex': getStringFromSex(sex),
-    };
-
   }
 }
 

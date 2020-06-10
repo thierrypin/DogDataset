@@ -11,25 +11,44 @@ import 'package:tuple/tuple.dart';
 import '../models/pet.dart';
 
 void savePet(Pet pet) async {
+  var prefs = await SharedPreferences.getInstance();
+
+  int localId = prefs.getInt('id_counter');
+  if (localId == null) {
+    prefs.setInt("id_counter", 0);
+    localId = 0;
+  }
+
+  pet.localId = localId;
+  print("Local id: $localId");
+
   // Make pet directory
   Directory basepath = await getApplicationDocumentsDirectory();
-  Directory directory = Directory(join(basepath.path, pet.id.toString().padLeft(6, '0')));
+  Directory directory = Directory(join(basepath.path, pet.localId.toString().padLeft(6, '0')));
   await directory.create();
   print(directory.path);
 
   // Populate json
   File f = File(directory.path + '/' + "info.json");
-  // TODO
   f.writeAsString(json.encode(pet.toJson()));
 
-  var prefs = await SharedPreferences.getInstance();
+  prefs.setInt("id_counter", localId + 1);
+}
 
-  prefs.setInt("id_counter", pet.id + 1);
+void updatePet(Pet pet) async {
+  // Make pet directory
+  Directory basepath = await getApplicationDocumentsDirectory();
+  Directory directory = Directory(join(basepath.path, pet.localId.toString().padLeft(6, '0')));
+  print(directory.path);
+
+  // Populate json
+  File f = File(directory.path + '/' + "info.json");
+  f.writeAsString(json.encode(pet.toJson()));
 }
 
 void deletePet(Pet pet) async {
   Directory basepath = await getApplicationDocumentsDirectory();
-  Directory directory = Directory(join(basepath.path, pet.id.toString().padLeft(6, '0')));
+  Directory directory = Directory(join(basepath.path, pet.localId.toString().padLeft(6, '0')));
   await directory.delete(recursive: true);
 }
 
@@ -80,12 +99,12 @@ Future<List<Pet>> loadPets() async {
     if (exists) {
       String contents = await f.readAsString();
       Pet pet = Pet.fromJson(json.decode(contents));
-      pet.photos = List<String>();
+      pet.photos = List<Photo>();
 
       // Load images
       for (FileSystemEntity e in dir.listSync()) {
         if (e is File && e.path.endsWith(".png")) {
-          pet.photos.add(e.path);
+          pet.photos.add(Photo(path: e.path));
         }
       }
 
@@ -96,20 +115,20 @@ Future<List<Pet>> loadPets() async {
   return pets;
 }
 
-void populateThumbnails(Pet pet) {
-  if (pet.photos.length > pet.thumbnails.length) {
-    for (int i = pet.thumbnails.length; i < pet.photos.length; i++) {
-      String img = pet.photos[i];
-      print(img);
-      pimg.Image image = pimg.decodeImage(File(img).readAsBytesSync());
-      print("${image.width}x${image.height}");
-
-      // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
-      pimg.Image thumbnail = pimg.copyResize(image, width: 150, height: 150);
-      pet.addThumbnail(pimg.encodePng(thumbnail));
-    }
-  }
-}
+//void populateThumbnails(Pet pet) {
+//  if (pet.photos.length > pet.thumbnails.length) {
+//    for (int i = pet.thumbnails.length; i < pet.photos.length; i++) {
+//      String img = pet.photos[i];
+//      print(img);
+//      pimg.Image image = pimg.decodeImage(File(img).readAsBytesSync());
+//      print("${image.width}x${image.height}");
+//
+//      // Resize the image to a 120x? thumbnail (maintaining the aspect ratio).
+//
+//      pet.addThumbnail(pimg.encodePng(thumbnail));
+//    }
+//  }
+//}
 
 void addPhoto(Pet pet, dynamic f) {
   File file;
@@ -123,20 +142,18 @@ void addPhoto(Pet pet, dynamic f) {
   Future<String> res = persistImage(pet, file);
 
   res.then((value) {
-    pimg.Image image = pimg.decodeImage(file.readAsBytesSync());
-    pimg.Image thumbnail = pimg.copyResize(image, width: 150);
-
-    pet.addPhoto(value);
-    pet.addThumbnail(pimg.encodePng(thumbnail));
+    pet.addPhoto(Photo(path: value));
   });
 }
 
 void deletePhoto(Pet pet, int idx) {
-  File file = File(pet.photos[idx]);
+  File file = File(pet.photos[idx].path);
+  file.delete(recursive: false);
+
+  file = File(pet.photos[idx].getThumbnail());
   file.delete(recursive: false);
 
   pet.removePhoto(idx);
-  pet.removeThumbnail(idx);
 }
 
 // Returns a Tuple3 with: encoded image, width, height
@@ -156,7 +173,13 @@ Tuple3<List<int>, num, num> getPhoto(dynamic f) {
 
 Future<String> persistImage(Pet pet, File file) async {
   String newPath = join(await getPetPath(pet), '${DateTime.now()}.png').replaceAll(" ", "_");
-  await file.copy(newPath);
+  file.copy(newPath);
+
+  pimg.Image image = pimg.decodeImage(file.readAsBytesSync());
+  pimg.Image thumbnail = pimg.copyResize(image, width: 150, height: 150);
+
+  File fileThumb = File(newPath + ".thumbnail.png");
+  fileThumb.writeAsBytesSync(pimg.encodePng(thumbnail));
 
   return newPath;
 }
@@ -164,6 +187,6 @@ Future<String> persistImage(Pet pet, File file) async {
 Future<String> getPetPath(Pet pet) async {
   Directory directory = await getApplicationDocumentsDirectory();
 
-  return join(directory.path, pet.id.toString().padLeft(6, '0'));
+  return join(directory.path, pet.localId.toString().padLeft(6, '0'));
 }
 

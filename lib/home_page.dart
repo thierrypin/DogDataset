@@ -4,8 +4,9 @@ import 'package:flutter_mobx/flutter_mobx.dart';
 
 import 'dart:async';
 
+import 'conn/sync.dart';
 import 'models/pet.dart';
-import 'persistence/pet_access.dart';
+import 'persistence/pet_persistence.dart';
 import 'petmanagement/add_pet_screen.dart';
 import 'petmanagement/view_pet_screen.dart';
 
@@ -29,7 +30,6 @@ class _DogHomePageState extends State<DogHomePage> {
       fpets.then((value) {
         print("pets # ${value.length}");
         setState(() {
-          print("terminou");
           _pets = value;
         });
         _observablePets = ObservableList<Pet>.of(_pets);
@@ -48,7 +48,7 @@ class _DogHomePageState extends State<DogHomePage> {
         ),
       trailing: Text(getPetEmoji(pet.petType)),
       onTap: (){
-        var result = Navigator.push(
+        Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => ViewPetScreen(pet: pet, pets: _observablePets)),
         );
@@ -128,9 +128,7 @@ class _DogHomePageState extends State<DogHomePage> {
     return FloatingActionButton(
         child: Icon(Icons.cloud_upload),
         tooltip: "Enviar fotos",
-        onPressed: () {
-          //
-        }
+        onPressed: () {syncPets(_pets);},
     );
   }
 
@@ -146,7 +144,7 @@ class _DogHomePageState extends State<DogHomePage> {
       drawer: makeDrawer(),
       body: Column(
         children: <Widget>[
-          Align(alignment: Alignment.centerLeft, child: ListTile(title: Text("Animais cadastrados", style: Theme.of(context).textTheme.headline5))),
+          Align(alignment: Alignment.centerLeft, child: ListTile(title: Text("Animais salvos", style: Theme.of(context).textTheme.headline5))),
           Expanded(child: _buildPetsList(),),
         ],
       ),

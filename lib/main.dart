@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:global_configuration/global_configuration.dart';
 
 import 'home_page.dart';
 
-void main()  {
+void main() async {
   runApp(MyApp());
 }
 
@@ -10,6 +11,9 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    // Load configurations
+    GlobalConfiguration().loadFromAsset("http");
+
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(

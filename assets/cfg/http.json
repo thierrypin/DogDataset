@@ -1,0 +1,8 @@
+{
+  "url": "10.0.2.2:5000",
+  "routes": {
+    "newpet": "/newpet",
+    "newphoto": "/newphoto/%d",
+    "editpet": "/editpet"
+  }
+}
